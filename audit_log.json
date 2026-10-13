@@ -1,0 +1,88 @@
+[
+  {
+    "order_id": "#1042",
+    "timestamp": "2026-10-11T14:55:02.274812",
+    "status": "CRITICAL",
+    "badge": "?? Critical Discrepancy - Do Not Ship",
+    "audit_flags": [
+      "CRITICAL: Insufficient physical inventory for SKU 'HOODIE-GRY-XL' (3 requested vs 1 available).",
+      "WARNING: SKU 'HOODIE-GRY-XL' experienced a multi-app inventory sync overwrite in the last 60 minutes.",
+      "CRITICAL: Insufficient physical inventory for SKU 'MUG-CERAMIC' (1 requested vs 0 available)."
+    ]
+  },
+  {
+    "order_id": "#1043",
+    "timestamp": "2026-10-11T15:46:53.870566",
+    "status": "VERIFIED",
+    "badge": "Verified - Ready for Packing",
+    "audit_flags": []
+  },
+  {
+    "order_id": "#1044",
+    "timestamp": "2026-10-11T15:46:53.872635",
+    "status": "WARNING",
+    "badge": "Warning - Potential Stock Conflict",
+    "audit_flags": [
+      "WARNING: SKU 'TSHIRT-RED-L' oversold (1 requested vs 0 available). Policy allows out-of-stock sales."
+    ]
+  },
+  {
+    "order_id": "#1045",
+    "timestamp": "2026-10-11T15:46:53.875371",
+    "status": "CRITICAL",
+    "badge": "Critical Discrepancy - Do Not Ship",
+    "audit_flags": [
+      "CRITICAL: Insufficient physical inventory for SKU 'HOODIE-GRY-XL' (3 requested vs 1 available).",
+      "WARNING: SKU 'HOODIE-GRY-XL' experienced a multi-app inventory sync overwrite in the last 60 minutes."
+    ]
+  },
+  {
+    "order_id": "#9999",
+    "timestamp": "2026-10-11T17:07:27.560262",
+    "status": "CRITICAL",
+    "badge": "Critical Discrepancy - Do Not Ship",
+    "audit_flags": [
+      "CRITICAL: Insufficient physical inventory for SKU 'MUG-CERAMIC' (1 requested vs 0 available)."
+    ]
+  },
+  {
+    "order_id": "#8888",
+    "timestamp": "2026-10-11T18:29:35.958971",
+    "status": "CRITICAL",
+    "badge": "Critical Discrepancy - Do Not Ship",
+    "audit_flags": [
+      "CRITICAL: Insufficient physical inventory for SKU 'MUG-CERAMIC' (2 requested vs 0 available)."
+    ]
+  },
+  {
+    "order_id": "#9999",
+    "timestamp": "2026-10-11T20:32:30.887909",
+    "status": "CRITICAL",
+    "badge": "Critical Discrepancy - Do Not Ship",
+    "audit_flags": [
+      "CRITICAL: Insufficient physical inventory for SKU 'MUG-CERAMIC' (1 requested vs 0 available)."
+    ]
+  },
+  {
+    "order_id": 820982911946154508,
+    "timestamp": "2026-10-12T19:54:11.304331",
+    "status": "CRITICAL",
+    "badge": "Critical Discrepancy - Do Not Ship",
+    "audit_flags": [
+      "CRITICAL: Item 'Gift Card' is missing a valid SKU setting.",
+      "CRITICAL: SKU 'LENS-PROTECT-2YR' not found in active location inventory database.",
+      "CRITICAL: SKU 'CASE-LEATHER-PREM' not found in active location inventory database.",
+      "CRITICAL: SKU 'sku-untracked-1' not found in active location inventory database.",
+      "CRITICAL: Item 'The Compare at Price Snowboard' is missing a valid SKU setting."
+    ]
+  },
+  {
+    "order_id": 18941348020467,
+    "timestamp": "2026-10-12T20:54:56.836516",
+    "status": "CRITICAL",
+    "badge": "Critical Discrepancy - Do Not Ship",
+    "audit_flags": [
+      "CRITICAL: SKU 'sku-managed-1' not found in active location inventory database."
+    ]
+  }
+]

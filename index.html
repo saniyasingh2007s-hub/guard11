@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Fulfillment Guard Dashboard</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f8fafc; color: #1e293b; margin: 0; padding: 40px; }
+        .container { max-width: 900px; margin: auto; }
+        h1 { margin-bottom: 5px; color: #0f172a; }
+        .subtitle { color: #64748b; margin-bottom: 30px; }
+        .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 30px; }
+        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); text-align: center; }
+        .card h3 { margin: 0 0 10px 0; font-size: 14px; color: #64748b; text-transform: uppercase; }
+        .card .value { font-size: 28px; font-weight: bold; }
+        .order-card { background: white; padding: 20px; border-radius: 10px; margin-bottom: 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-left: 6px solid #cbd5e1; }
+        .order-card.CRITICAL { border-left-color: #ef4444; background: #fef2f2; }
+        .order-card.WARNING { border-left-color: #f59e0b; background: #fffbeb; }
+        .order-card.VERIFIED { border-left-color: #22c55e; background: #f0fdf4; }
+        .order-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-weight: bold; font-size: 18px; }
+        .badge { padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; color: white; }
+        .badge.CRITICAL { background: #ef4444; }
+        .badge.WARNING { background: #f59e0b; }
+        .badge.VERIFIED { background: #22c55e; }
+        .timestamp { font-size: 13px; color: #64748b; margin-bottom: 10px; }
+        ul { margin: 5px 0 0 20px; padding: 0; }
+        li { color: #334155; font-size: 14px; margin-bottom: 4px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🛡️ Fulfillment Guard</h1>
+        <div class="subtitle">Pre-fulfillment inventory discrepancy & error detection dashboard</div>
+        
+        <div class="metrics">
+            <div class="card"><h3>Total Audited</h3><div class="value">5</div></div>
+            <div class="card"><h3>Verified</h3><div class="value" style="color: #22c55e;">1</div></div>
+            <div class="card"><h3>Warnings</h3><div class="value" style="color: #f59e0b;">1</div></div>
+            <div class="card"><h3>Critical Blocked</h3><div class="value" style="color: #ef4444;">3</div></div>
+        </div>
+
+        <h2>📦 Order Audit Stream</h2>
+
+        <div class="order-card CRITICAL">
+            <div class="order-header">
+                <span>Order #9999</span>
+                <span class="badge CRITICAL">CRITICAL</span>
+            </div>
+            <div class="timestamp">Timestamp: 2026-10-11T17:07:27.560262 &nbsp;|&nbsp; Critical Discrepancy - Do Not Ship</div>
+            <b>Audit Flags:</b><ul><li>CRITICAL: Insufficient physical inventory for SKU 'MUG-CERAMIC' (1 requested vs 0 available).</li></ul>
+        </div>
+        
+        <div class="order-card CRITICAL">
+            <div class="order-header">
+                <span>Order #1045</span>
+                <span class="badge CRITICAL">CRITICAL</span>
+            </div>
+            <div class="timestamp">Timestamp: 2026-10-11T15:46:53.875371 &nbsp;|&nbsp; Critical Discrepancy - Do Not Ship</div>
+            <b>Audit Flags:</b><ul><li>CRITICAL: Insufficient physical inventory for SKU 'HOODIE-GRY-XL' (3 requested vs 1 available).</li><li>WARNING: SKU 'HOODIE-GRY-XL' experienced a multi-app inventory sync overwrite in the last 60 minutes.</li></ul>
+        </div>
+        
+        <div class="order-card WARNING">
+            <div class="order-header">
+                <span>Order #1044</span>
+                <span class="badge WARNING">WARNING</span>
+            </div>
+            <div class="timestamp">Timestamp: 2026-10-11T15:46:53.872635 &nbsp;|&nbsp; Warning - Potential Stock Conflict</div>
+            <b>Audit Flags:</b><ul><li>WARNING: SKU 'TSHIRT-RED-L' oversold (1 requested vs 0 available). Policy allows out-of-stock sales.</li></ul>
+        </div>
+        
+        <div class="order-card VERIFIED">
+            <div class="order-header">
+                <span>Order #1043</span>
+                <span class="badge VERIFIED">VERIFIED</span>
+            </div>
+            <div class="timestamp">Timestamp: 2026-10-11T15:46:53.870566 &nbsp;|&nbsp; Verified - Ready for Packing</div>
+            <i>No discrepancies detected. Order cleared for packing.</i>
+        </div>
+        
+        <div class="order-card CRITICAL">
+            <div class="order-header">
+                <span>Order #1042</span>
+                <span class="badge CRITICAL">CRITICAL</span>
+            </div>
+            <div class="timestamp">Timestamp: 2026-10-11T14:55:02.274812 &nbsp;|&nbsp; ?? Critical Discrepancy - Do Not Ship</div>
+            <b>Audit Flags:</b><ul><li>CRITICAL: Insufficient physical inventory for SKU 'HOODIE-GRY-XL' (3 requested vs 1 available).</li><li>WARNING: SKU 'HOODIE-GRY-XL' experienced a multi-app inventory sync overwrite in the last 60 minutes.</li><li>CRITICAL: Insufficient physical inventory for SKU 'MUG-CERAMIC' (1 requested vs 0 available).</li></ul>
+        </div>
+        
+    </div>
+</body>
+</html>

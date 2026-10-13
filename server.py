@@ -6,7 +6,7 @@ app = Flask(__name__)
 # --- CONFIGURATION (Your 3 lines go right here) ---
 SHOPIFY_STORE_DOMAIN = "fulfillment-guard-dev.myshopify.com"
 CLIENT_ID = "b072ac0d2451a322600f214e9240c9aa"          # Paste your Client ID here
-CLIENT_SECRET = "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"  # Paste your Client Secret here
+CLIENT_SECRET = os.environ.get("CLIENT_SECRET") # Paste your Client Secret here
 
 def get_shopify_access_token():
     """Generates an Admin API Access Token using Client Credentials."""

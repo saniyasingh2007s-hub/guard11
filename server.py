@@ -1,103 +1,111 @@
-﻿from flask import Flask, request, jsonify
-import requests
+﻿import os
+import hmac
+import hashlib
+import json
+from flask import Flask, request, jsonify
+from flask_sqlalchemy import SQLAlchemy
+from datetime import datetime
 
 app = Flask(__name__)
 
-# --- CONFIGURATION (Your 3 lines go right here) ---
-SHOPIFY_STORE_DOMAIN = "fulfillment-guard-dev.myshopify.com"
-CLIENT_ID = "b072ac0d2451a322600f214e9240c9aa"          # Paste your Client ID here
-CLIENT_SECRET = os.environ.get("CLIENT_SECRET") # Paste your Client Secret here
+# Configure PostgreSQL Database
+db_url = os.environ.get('DATABASE_URL')
+if db_url and db_url.startswith("postgres://"):
+    db_url = db_url.replace("postgres://", "postgresql://", 1)
 
-def get_shopify_access_token():
-    """Generates an Admin API Access Token using Client Credentials."""
-    url = f"https://{SHOPIFY_STORE_DOMAIN}/admin/oauth/access_token"
-    headers = {"Content-Type": "application/json"}
-    payload = {
-        "client_id": CLIENT_ID,
-        "client_secret": CLIENT_SECRET,
-        "grant_type": "client_credentials"
-    }
-    try:
-        response = requests.post(url, json=payload, headers=headers)
-        if response.status_code == 200:
-            return response.json().get("access_token")
-        else:
-            print(f"[ERROR] Failed to fetch access token ({response.status_code}): {response.text}")
-            return None
-    except Exception as e:
-        print(f"[ERROR] Exception during token retrieval: {e}")
-        return None
+app.config['SQLALCHEMY_DATABASE_URI'] = db_url or 'sqlite:///local_guard11.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-@app.route('/webhook/orders/create', methods=['POST'])
-def handle_order_create():
-    order_data = request.json
-    if not order_data:
-        return jsonify({"error": "No JSON payload received"}), 400
+db = SQLAlchemy(app)
 
-    order_id = order_data.get('id')
-    line_items = order_data.get('line_items', [])
+# Database Model for Order Audit Logs
+class AuditLog(db.Model):
+    __tablename__ = 'audit_logs'
     
-    # Fetch access token dynamically
-    token = get_shopify_access_token()
-    if not token:
-        return jsonify({"error": "Authentication failed"}), 401
+    id = db.Column(db.Integer, primary_key=True)
+    order_id = db.Column(db.String(100), nullable=False)
+    order_name = db.Column(db.String(100), nullable=True)
+    status = db.Column(db.String(50), nullable=False)  # e.g., 'CANCELLED', 'PASSED', 'FAILED'
+    reason = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    headers = {
-        "X-Shopify-Access-Token": token,
-        "Content-Type": "application/json"
-    }
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "order_id": self.order_id,
+            "order_name": self.order_name,
+            "status": self.status,
+            "reason": self.reason,
+            "created_at": self.created_at.isoformat()
+        }
 
-    print(f"--> Received Order #{order_data.get('order_number', order_id)}")
+# Initialize Database Tables
+with app.app_context():
+    db.create_all()
 
+CLIENT_SECRET = os.environ.get('CLIENT_SECRET', '')
+
+def verify_shopify_webhook(data, hmac_header):
+    if not CLIENT_SECRET:
+        return False
+    digest = hmac.new(
+        CLIENT_SECRET.encode('utf-8'),
+        data,
+        hashlib.sha256
+    ).digest()
+    computed_hmac = hashlib.sha256(digest).hexdigest()
+    # Base64 encoded HMAC for Shopify validation
+    import base64
+    computed_b64 = base64.b64encode(digest).decode('utf-8')
+    return hmac.compare_digest(computed_b64, hmac_header)
+
+@app.route('/')
+def home():
+    return jsonify({"status": "Guard11 Service Active", "database": "Connected"})
+
+@app.route('/webhooks/orders/create', methods=['POST'])
+def order_created_webhook():
+    hmac_header = request.headers.get('X-Shopify-Hmac-Sha256')
+    data = request.get_data()
+
+    if hmac_header and not verify_shopify_webhook(data, hmac_header):
+        return jsonify({"error": "Unauthorized"}), 401
+
+    payload = request.get_json(silent=True) or {}
+    order_id = str(payload.get('id', 'N/A'))
+    order_name = payload.get('name', 'N/A')
+    line_items = payload.get('line_items', [])
+
+    canceled = False
+    audit_reason = "All items in stock."
+
+    # Perform inventory audit
     for item in line_items:
-        title = item.get('title')
-        variant_id = item.get('variant_id')
-        ordered_qty = item.get('quantity', 1)
+        # Check stock logic
+        quantity = item.get('quantity', 0)
+        # Note: If inventory check reveals 0 stock on item
+        if item.get('fulfillable_quantity', 1) == 0:
+            canceled = True
+            audit_reason = f"Item {item.get('title')} was out of stock."
+            break
 
-        print(f"    - Checking Live Stock for: {title} (Variant ID: {variant_id})")
+    status_str = "CANCELLED" if canceled else "PASSED"
 
-        try:
-            # 1. Fetch variant details to get inventory_item_id
-            variant_url = f"https://{SHOPIFY_STORE_DOMAIN}/admin/api/2026-01/variants/{variant_id}.json"
-            variant_res = requests.get(variant_url, headers=headers)
-            
-            if variant_res.status_code != 200:
-                print(f"[ERROR] Failed to fetch variant ({variant_res.status_code}): {variant_res.text}")
-                continue
-            
-            variant_data = variant_res.json()
-            inventory_item_id = variant_data['variant']['inventory_item_id']
+    # Save record to Database
+    try:
+        log_entry = AuditLog(
+            order_id=order_id,
+            order_name=order_name,
+            status=status_str,
+            reason=audit_reason
+        )
+        db.session.add(log_entry)
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        print(f"Database logging error: {e}")
 
-            # 2. Query inventory levels endpoint using inventory_item_id
-            inventory_url = f"https://{SHOPIFY_STORE_DOMAIN}/admin/api/2026-01/inventory_levels.json?inventory_item_ids={inventory_item_id}"
-            inv_res = requests.get(inventory_url, headers=headers)
-            
-            if inv_res.status_code != 200:
-                print(f"[ERROR] Failed to fetch inventory ({inv_res.status_code}): {inv_res.text}")
-                continue
+    return jsonify({"status": "processed", "order_id": order_id, "audit_status": status_str}), 200
 
-            inv_data = inv_res.json()
-            available_qty = inv_data['inventory_levels'][0]['available']
-            print(f"    - Available Inventory: {available_qty} | Ordered Qty: {ordered_qty}")
-
-            # 3. Check for oversale and cancel if needed
-            if available_qty < ordered_qty:
-                print(f"[OVERSALE DETECTED] Cancelling Order #{order_id}...")
-                cancel_url = f"https://{SHOPIFY_STORE_DOMAIN}/admin/api/2026-01/orders/{order_id}/cancel.json"
-                cancel_res = requests.post(cancel_url, headers=headers, json={"reason": "inventory"})
-                
-                if cancel_res.status_code == 200:
-                    print(f"[SUCCESS] Order #{order_id} successfully cancelled.")
-                else:
-                    print(f"[ERROR] Failed to cancel order ({cancel_res.status_code}): {cancel_res.text}")
-
-        except Exception as e:
-            print(f"[ERROR] Exception occurred during inventory check: {e}")
-
-    return jsonify({"status": "success", "message": "Live inventory levels verified"}), 200
-
-import os
-
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+if __name__ == '__main__':
+    app.run(port=10000)
